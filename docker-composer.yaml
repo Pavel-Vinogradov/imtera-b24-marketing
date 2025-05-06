@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  imtera.b24.marketing.nginx:
+    container_name: imtera.b24.marketing.nginx
+    networks:
+      - network1
+    ports:
+      - "3100:80"
+    image: nginx:stable-alpine
+    volumes:
+      - ./:/app
+      - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - imtera.b24.marketing.php
+    restart: unless-stopped
+
+  imtera.b24.marketing.php:
+    container_name: imtera.b24.marketing.php
+    networks:
+      - network1
+    working_dir: /app
+    build:
+      dockerfile: docker/php/Dockerfile
+      context: ./
+    volumes:
+      - ./:/app
+    depends_on:
+      - imtera.b24.marketing.db
+    restart: unless-stopped
+
+  imtera.b24.marketing.db:
+    container_name: imtera.b24.marketing.db
+    networks:
+      - network1
+    image: postgres:alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: imtera.b24.marketing
+      POSTGRES_USER: imtera.b24.marketing
+      POSTGRES_PASSWORD: imtera.b24.marketing
+    volumes:
+      - imtera.b24.marketing.db.data:/var/lib/postgresql/data
+    ports:
+      - "3101:5432"
+
+  imtera.b24.marketing.node:
+    build:
+      context: ./docker/node
+    tty: true
+    volumes:
+      - ./:/var/www/app
+
+volumes:
+  imtera.b24.marketing.db.data:
+
+networks:
+  network1:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1450
